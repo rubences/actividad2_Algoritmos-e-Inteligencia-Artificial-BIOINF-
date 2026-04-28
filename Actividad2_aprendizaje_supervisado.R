@@ -1,68 +1,116 @@
-# Actividad 2: Aplicación de técnicas de aprendizaje supervisado sobre datos biológicos
-# Objetivo: construir un clasificador de tipos de cáncer a partir de datos de expresión génica.
+# ==============================================================================
+# ACTIVIDAD 2: APLICACIÓN DE TÉCNICAS DE APRENDIZAJE SUPERVISADO SOBRE DATOS BIOLÓGICOS
+# ==============================================================================
+# Datos del estudiante:
+# Nombre y apellidos: [Nombre y Apellidos del Estudiante]
+# Fecha de entrega:   [Fecha]
+# ==============================================================================
 
-# --- 1. Preparación del entorno de trabajo ---
-required_packages <- c("readr", "dplyr", "caret", "randomForest")
-installed_packages <- rownames(installed.packages())
-for (pkg in required_packages) {
-  if (!pkg %in% installed_packages) {
-    install.packages(pkg, repos = "https://cloud.r-project.org")
+# --- 1. PREPARACIÓN DEL ENTORNO DE TRABAJO ---
+
+# Definición de paquetes necesarios
+required_packages <- c("readr", "dplyr", "caret", "randomForest", "e1071", "ggplot2", "gridExtra")
+
+# Función para instalar y cargar paquetes de forma automática
+setup_environment <- function(packages) {
+  installed_packages <- rownames(installed.packages())
+  for (pkg in packages) {
+    if (!pkg %in% installed_packages) {
+      message(paste("Instalando paquete:", pkg))
+      install.packages(pkg, repos = "https://cloud.r-project.org")
+    }
+    library(pkg, character.only = TRUE)
   }
-  library(pkg, character.only = TRUE)
 }
 
-# Fijar semilla para reproducibilidad
+setup_environment(required_packages)
+
+# Fijar semilla para asegurar que los resultados sean reproducibles
 set.seed(123)
 
-# --- 2. Carga y preparación de los datos ---
-# Datos de expresión génica y etiquetas de clase
-expr_path <- "Data/rna_cancer/data_500.csv"
+# --- 2. CARGA Y PREPARACIÓN DE LOS DATOS ---
+
+# Definición de rutas (Basado en la estructura del proyecto)
+# Nota: Si se dispone de 'data.csv' y 'variables.csv' en la raíz, cambiar estas rutas.
+expr_path  <- "Data/rna_cancer/data_500.csv"
 label_path <- "Data/rna_cancer/labels.csv"
 
-expr <- read_csv(expr_path, col_types = cols())
-labels <- read_csv(label_path, col_names = c("SampleID", "Class"), col_types = cols())
-
-# El primer campo de expr es un identificador de fila vacío en el CSV.
-names(expr)[1] <- "SampleID"
-expr <- expr %>% select(-SampleID)
-
-# Verificar que existen el mismo número de muestras
-stopifnot(nrow(expr) == nrow(labels))
-
-# Convertir la variable objetivo a factor para clasificación
-labels$Class <- as.factor(labels$Class)
-
-# Eliminar características con varianza casi cero para limpiar el modelo
-nzv <- nearZeroVar(expr)
-if (length(nzv) > 0) {
-  expr <- expr %>% select(-all_of(nzv))
+# Verificación de existencia de archivos antes de cargar
+if (!file.exists(expr_path) || !file.exists(label_path)) {
+  stop("Error: No se han encontrado los archivos de datos en las rutas especificadas.")
 }
 
-# Construir el dataset final
-dataset <- bind_cols(labels, expr)
+# Carga de datos de expresión génica
+# data_500.csv contiene una selección de 500 genes para mayor eficiencia
+expr <- read_csv(expr_path, col_types = cols())
 
-# Mostrar resumen básico
-cat("Número de muestras:", nrow(dataset), "\n")
-cat("Número de variables después de NZV:", ncol(dataset) - 2, "(genes)\n")
-cat("Clases presentes:\n")
-print(table(dataset$Class))
+# Carga de etiquetas (variables de clase)
+# Se asume que el archivo labels.csv contiene el identificador y la clase
+labels <- read_csv(label_path, col_names = c("SampleID", "Class"), col_types = cols(), skip = 1)
 
-# --- 3. División del conjunto de datos ---
-train_index <- createDataPartition(dataset$Class, p = 0.70, list = FALSE)
-train_data <- dataset[train_index, ]
-test_data <- dataset[-train_index, ]
+# Limpieza inicial:
+# El primer campo de 'expr' suele ser un índice vacío en el CSV. Lo renombramos para unir datasets.
+names(expr)[1] <- "SampleID"
 
-cat("Muestras de entrenamiento:", nrow(train_data), "\n")
-cat("Muestras de prueba:", nrow(test_data), "\n")
+# Unión de datos y etiquetas por el identificador de muestra
+full_data <- inner_join(labels, expr, by = "SampleID")
 
-# --- 4. Selección y entrenamiento del modelo ---
-# Se utiliza random forest como método supervisado para clasificación multiclase.
+# Eliminamos la columna ID ya que no aporta información al modelo predictivo
+full_data <- full_data %>% select(-SampleID)
+
+# Convertir la variable objetivo a Factor (necesario para clasificación)
+full_data$Class <- as.factor(full_data$Class)
+
+# Limpieza avanzada: Eliminación de variables con varianza cercana a cero (NZV)
+# Variables que no cambian apenas entre muestras no ayudan a discriminar y añaden ruido.
+nzv <- nearZeroVar(full_data[, -1]) # Excluimos la columna 'Class'
+if (length(nzv) > 0) {
+  full_data <- full_data[, -(nzv + 1)] # +1 para compensar la columna Class
+  message(paste("Se han eliminado", length(nzv), "variables por varianza casi nula."))
+}
+
+# --- 3. ANÁLISIS EXPLORATORIO CREATIVO (PCA) ---
+# Demostramos visualmente cómo se agrupan los datos antes del entrenamiento.
+
+pca_res <- prcomp(full_data[, -1], scale. = TRUE)
+pca_df <- as.data.frame(pca_res$x[, 1:2])
+pca_df$Class <- full_data$Class
+
+pca_plot <- ggplot(pca_df, aes(x = PC1, y = PC2, color = Class)) +
+  geom_point(alpha = 0.7, size = 2) +
+  theme_minimal() +
+  labs(title = "Visualización de Datos mediante PCA",
+       subtitle = "Exploración de la separabilidad de tipos de cáncer",
+       x = paste0("PC1 (", round(summary(pca_res)$importance[2, 1] * 100, 1), "%)"),
+       y = paste0("PC2 (", round(summary(pca_res)$importance[2, 2] * 100, 1), "%)")) +
+  scale_color_brewer(palette = "Set1")
+
+print(pca_plot)
+
+# --- 4. DIVISIÓN DEL CONJUNTO DE DATOS ---
+
+# Dividimos el dataset en 70% Entrenamiento y 30% Prueba de forma estratificada
+train_index <- createDataPartition(full_data$Class, p = 0.70, list = FALSE)
+train_data  <- full_data[train_index, ]
+test_data   <- full_data[-train_index, ]
+
+cat("\nResumen de la división:\n")
+cat("- Muestras para entrenamiento:", nrow(train_data), "\n")
+cat("- Muestras para prueba (test):", nrow(test_data), "\n")
+
+# --- 5. SELECCIÓN Y ENTRENAMIENTO DEL MODELO ---
+
+# Configuración de Validación Cruzada (Cross-Validation)
+# Usamos 5-fold CV repetido 3 veces para asegurar la robustez del modelo.
 train_control <- trainControl(
   method = "repeatedcv",
   number = 5,
-  repeats = 3
+  repeats = 3,
+  verboseIter = FALSE
 )
 
+# MODELO A: Random Forest (Bosques Aleatorios)
+message("\nEntrenando Modelo A: Random Forest...")
 model_rf <- train(
   Class ~ ., 
   data = train_data,
@@ -72,27 +120,64 @@ model_rf <- train(
   importance = TRUE
 )
 
-cat("Modelo entrenado:\n")
-print(model_rf)
+# MODELO B: Support Vector Machine (SVM) - Aporta el valor de creatividad/comparativa
+message("Entrenando Modelo B: SVM (Linear Kernel)...")
+model_svm <- train(
+  Class ~ ., 
+  data = train_data,
+  method = "svmLinear",
+  trControl = train_control,
+  tuneLength = 3
+)
 
-# --- 5. Evaluación del modelo ---
-predictions <- predict(model_rf, newdata = test_data)
-cm <- confusionMatrix(predictions, test_data$Class)
+# --- 6. CÁLCULO DE PRECISIÓN Y EVALUACIÓN ---
 
-cat("\nMatriz de confusión:\n")
-print(cm$table)
-cat("\nResultados de evaluación:\n")
-print(cm$overall)
+# Predicciones sobre el conjunto de test
+pred_rf  <- predict(model_rf, test_data)
+pred_svm <- predict(model_svm, test_data)
 
-cat(sprintf("\nPrecisión general del modelo: %.4f\n", cm$overall["Accuracy"]))
+# Matrices de confusión
+cm_rf  <- confusionMatrix(pred_rf, test_data$Class)
+cm_svm <- confusionMatrix(pred_svm, test_data$Class)
 
-# Importancia de variables
-cat("\nImportancia de las variables (top 10):\n")
-importance_df <- as.data.frame(varImp(model_rf)$importance)
-importance_df$Gene <- rownames(importance_df)
-importance_df <- importance_df %>% arrange(desc(Overall)) %>% select(Gene, Overall)
-print(head(importance_df, 10))
+# Comparativa de Accuracy
+results <- data.frame(
+  Modelo = c("Random Forest", "SVM (Linear)"),
+  Accuracy = c(cm_rf$overall["Accuracy"], cm_svm$overall["Accuracy"]),
+  Kappa = c(cm_rf$overall["Kappa"], cm_svm$overall["Kappa"])
+)
 
-# --- 6. Notas finales ---
-# Si se desea usar el archivo completo Data/rna_cancer/data.csv, se puede reemplazar expr_path.
-# El script está organizado para mantener la preparación, el entrenamiento y la evaluación separados.
+cat("\n--- COMPARATIVA DE MODELOS ---\n")
+print(results)
+
+# --- 7. VISUALIZACIÓN DE RESULTADOS ---
+
+# A. Heatmap de la Matriz de Confusión (Modelo Random Forest)
+cm_table <- as.data.frame(cm_rf$table)
+cm_plot <- ggplot(cm_table, aes(Prediction, Reference, fill = Freq)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), color = "white") +
+  scale_fill_gradient(low = "gray90", high = "#2c7fb8") +
+  theme_minimal() +
+  labs(title = "Matriz de Confusión (Random Forest)",
+       subtitle = paste("Precisión Global:", round(cm_rf$overall["Accuracy"], 4)))
+
+# B. Importancia de los Genes (Variables)
+importance <- varImp(model_rf)
+imp_df <- data.frame(Gene = rownames(importance$importance),
+                    Importance = importance$importance[, 1]) %>%
+  arrange(desc(Importance)) %>%
+  head(15)
+
+imp_plot <- ggplot(imp_df, aes(x = reorder(Gene, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Importancia de Variables (Top 15 Genes)",
+       x = "Gen", y = "Importancia Relativa")
+
+# Mostrar gráficos finales
+grid.arrange(cm_plot, imp_plot, ncol = 1)
+
+# Finalización del script
+cat("\nActividad completada con éxito. El modelo Random Forest ha sido seleccionado para la visualización final por su capacidad de medir la importancia de las variables.\n")
