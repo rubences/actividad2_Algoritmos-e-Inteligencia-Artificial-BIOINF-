@@ -1,105 +1,130 @@
-# Pan-Cancer Transcriptomic Classification using Ensemble Learning and Dimensionality Reduction
+# Clasificación Transcriptómica Pan-Cáncer mediante Aprendizaje de Conjunto y Reducción de Dimensionalidad
 
-**Author:** Rubén Juárez Cádiz  
-**Institution:** Universidad UNED  
-**Date:** April 2026  
-
----
-
-## Abstract
-This study presents a high-performance computational framework for the classification of five major solid tumor types (BRCA, LUAD, PRAD, KIRC, COAD) based on RNA-seq gene expression profiles. By integrating advanced preprocessing, non-linear dimensionality reduction (UMAP/t-SNE), and optimized Ensemble Learning (Random Forest), we achieved a classification accuracy of >98% and a Matthews Correlation Coefficient (MCC) of 0.97. The pipeline identifies robust molecular biomarkers and demonstrates the feasibility of automated precision diagnostics in oncology.
+**Autor:** Rubén Juárez Cádiz  
+**Institución:** Universidad UNED  
+**Fecha:** Abril 2026  
 
 ---
 
-## 1. Introduction
-The identification of tumor origin and molecular subtype is critical for effective precision medicine. Traditional pathology often struggles with high-dimensional molecular data. This study leverages supervised learning to decode transcriptomic signatures, providing a rigorous statistical approach to cancer classification and biomarker discovery.
+## Resumen
+Este estudio presenta un marco computacional de alto rendimiento para la clasificación de cinco tipos principales de tumores sólidos (BRCA, LUAD, PRAD, KIRC, COAD) utilizando perfiles de expresión génica RNA-seq. Mediante la integración de preprocesamiento avanzado, reducción de dimensionalidad no lineal (UMAP/t-SNE) y Aprendizaje de Conjunto optimizado (Random Forest), se alcanzó una precisión diagnóstica superior al 98% y un Coeficiente de Correlación de Matthews (MCC) de 0.97. El pipeline identifica biomarcadores moleculares robustos y demuestra la viabilidad de diagnósticos automatizados de precisión en oncología clínica.
 
 ---
 
-## 2. Materials and Methods
-
-### 2.1 Dataset and Quality Control (QC)
-The primary dataset consists of 802 samples with expression levels for 500 pre-selected genes.
-1.  **Normalization**: Z-score standardization (center and scale) was applied to ensure feature comparability.
-2.  **Variance Filtering**: Near Zero Variance (NZV) analysis was performed to eliminate non-informative features and reduce computational noise.
-
-### 2.2 Model Selection and Optimization
-We compared **Random Forest (RF)** and **Support Vector Machines (SVM)**. Model tuning was performed via **Grid Search** for the `mtry` parameter in RF, and validation was secured through a **10-fold Cross-Validation (CV)** scheme to minimize selection bias and overfitting.
+## 1. Introducción
+La identificación del origen tumoral y el subtipo molecular es crítica para la medicina de precisión contemporánea. La patología tradicional, basada en la morfología celular, enfrenta limitaciones ante la complejidad de los datos moleculares de alta dimensionalidad. Este estudio emplea técnicas de aprendizaje supervisado para decodificar firmas transcriptómicas, proporcionando un enfoque estadístico riguroso para la clasificación del cáncer y el descubrimiento de biomarcadores (Breiman, 2001). El análisis masivo de datos de RNA-seq permite una transición del diagnóstico descriptivo al diagnóstico predictivo basado en datos.
 
 ---
 
-## 3. Results and Discussion
+## 2. Materiales y Métodos
 
-### 3.1 Exploratory Data Analysis and Feature Distribution
-Initial class distribution analysis confirmed a balanced dataset, essential for preventing model bias towards specific tumor types.
+### 2.1 Dataset y Control de Calidad (QC)
+El conjunto de datos comprende 802 muestras con niveles de expresión de 500 genes pre-seleccionados.
+1.  **Normalización**: Se aplicó estandarización Z-score para asegurar la comparabilidad de las características (features), eliminando sesgos debidos a la magnitud de la expresión.
+2.  **Filtrado de Varianza**: Se realizó un análisis de Varianza Casi Nula (Near Zero Variance, NZV) para eliminar características no informativas y reducir el ruido computacional, optimizando la estabilidad del modelo (Kuhn & Johnson, 2013).
 
-![Figure 1: Class Distribution](Results/Plots/01_Distribucion_Clases.png)
-*Figure 1: Distribution of samples across the five cancer classes. The balance ensures robust training for all categories.*
-
-### 3.2 Dimensionality Reduction and Cluster Integrity
-To evaluate the biological signal strength, we performed Linear (PCA) and Non-linear (t-SNE, UMAP) projections.
-
-![Figure 2: PCA Analysis](Results/Plots/02_PCA_Estructura.png)
-*Figure 2: Principal Component Analysis (PCA). PCA captures 30-40% of the variance, showing clear but slightly overlapping separations in linear space.*
-
-![Figure 3: t-SNE Clusters](Results/Plots/09_tSNE_Clusters.png)
-*Figure 3: t-SNE Projection. t-SNE reveals well-defined non-linear manifolds, indicating strong transcriptomic identities.*
-
-![Figure 4: UMAP Expert Projection](Results/Plots/11_UMAP_Expert_Projection.png)
-*Figure 4: UMAP Embedding. UMAP provides superior preservation of global topology, showcasing extremely compact and isolated tumor clusters.*
-
-### 3.3 Model Performance and Comparative Evaluation
-Random Forest demonstrated statistical superiority over SVM in terms of stability and Cohen's Kappa index.
-
-![Figure 5: Model Comparison](Results/Plots/03_Comparativa_Modelos.png)
-*Figure 5: Accuracy distribution across 10-fold CV. RF consistently outperformed SVM in high-dimensional genomic space.*
-
-### 3.4 Diagnostic Reliability and Validation
-Model performance was validated using Confusion Matrices and ROC curves.
-
-![Figure 6: Confusion Matrix](Results/Plots/04_Matriz_Confusion_RF.png)
-*Figure 6: Heatmap of the RF Confusion Matrix. The diagonal dominance confirms a near-zero misclassification rate across all classes.*
-
-![Figure 7: ROC Curves](Results/Plots/08_Curvas_ROC.png)
-*Figure 7: Multi-class ROC Curves. The Area Under the Curve (AUC) for all classes is >0.99, demonstrating exceptional sensitivity and specificity.*
+### 2.2 Selección y Optimización del Modelo
+Se evaluó el rendimiento comparativo entre **Random Forest (RF)** y **Máquinas de Vector de Soporte (SVM)**. La optimización del modelo se llevó a cabo mediante una búsqueda en rejilla (**Grid Search**) para el parámetro `mtry` en RF. La robustez de los resultados se garantizó a través de un esquema de **Validación Cruzada de 10 pliegues (10-fold CV)**.
 
 ---
 
-## 4. Molecular Biomarker Discovery
+## 3. Resultados y Discusión
 
-### 4.1 Feature Importance (Mean Decrease Gini)
-The model identified specific genes that serve as the primary drivers of tumor classification.
+### 3.1 Análisis Exploratorio y Distribución de Clases
+El análisis inicial de la distribución confirmó un dataset equilibrado, factor esencial para prevenir sesgos algorítmicos hacia tipos específicos de tumor.
 
-![Figure 8: Biomarker Ranking](Results/Plots/05_Importancia_Biomarcadores.png)
-*Figure 8: Top 20 Genes by Importance. These genes represent critical oncogenic hubs or metabolic regulators.*
+<p align="center">
+  <img src="Results/Plots/01_Distribucion_Clases.png" alt="Distribución" width="600">
+</p>
+<p align="center"><i>Figura 1: Distribución de muestras por tipo de cáncer. El balance garantiza un entrenamiento equitativo entre categorías.</i></p>
 
-### 4.2 Single-Gene Validation and Distribution
-We analyzed the expression profile of the top-ranked biomarkers to validate their discriminatory power.
+### 3.2 Reducción de Dimensionalidad e Integridad de Clusters
+Para evaluar la señal biológica, se realizaron proyecciones lineales (PCA) y no lineales (t-SNE, UMAP).
 
-![Figure 9: Single Gene Profile](Results/Plots/06_Perfil_Biomarcador.png)
-*Figure 9: Boxplot of the Top 1 Biomarker. The significant expression variance between classes confirms its utility as a diagnostic marker.*
+<p align="center">
+  <img src="Results/Plots/02_PCA_Estructura.png" alt="PCA" width="600">
+</p>
+<p align="center"><i>Figura 2: Análisis de Componentes Principales (PCA). El PCA captura la varianza global, mostrando separaciones preliminares en un espacio euclídeo lineal.</i></p>
 
-![Figure 10: Violin Plot Grid](Results/Plots/10_TopGenes_Violin.png)
-*Figure 10: Expression density for the Top 4 Genes. Violin plots reveal the underlying probability density of gene expression across tumor types.*
+<p align="center">
+  <img src="Results/Plots/09_tSNE_Clusters.png" alt="t-SNE" width="700">
+</p>
+<p align="center"><i>Figura 3: Proyección t-SNE. t-SNE revela variedades no lineales (manifolds) bien definidas, indicando identidades transcriptómicas potentes (van der Maaten & Hinton, 2008).</i></p>
 
-### 4.3 Genomic Signatures and Co-expression Networks
-Hierarchical clustering and correlation analysis revealed co-regulated gene modules.
+<p align="center">
+  <img src="Results/Plots/11_UMAP_Expert_Projection.png" alt="UMAP" width="700">
+</p>
+<p align="center"><i>Figura 4: Incrustación UMAP. UMAP ofrece una preservación superior de la topología global, mostrando clusters tumorales extremadamente compactos e independientes (McInnes et al., 2018).</i></p>
 
-![Figure 11: Hierarchical Heatmap](Results/Plots/07_Heatmap_Clusterizado.png)
-*Figure 11: Clustered Heatmap of the Top 50 Genes. The clear color blocks represent unique "genomic fingerprints" for each cancer.*
+### 3.3 Rendimiento del Modelo y Evaluación Comparativa
+Random Forest demostró una superioridad estadística sobre SVM en términos de estabilidad y el índice Kappa de Cohen.
 
-![Figure 12: Co-expression Network](Results/Plots/12_Red_Coexpresion_Top10.png)
-*Figure 12: Correlation matrix of the Top 10 genes. This network suggests functional interactions between the most predictive biomarkers.*
+<p align="center">
+  <img src="Results/Plots/03_Comparativa_Modelos.png" alt="Comparativa" width="600">
+</p>
+<p align="center"><i>Figura 5: Distribución de precisión mediante 10-fold CV. RF superó consistentemente a SVM en el espacio genómico de alta dimensionalidad.</i></p>
+
+### 3.4 Fiabilidad Diagnóstica y Validación
+La fiabilidad del modelo fue validada mediante matrices de confusión y curvas ROC multi-clase.
+
+<p align="center">
+  <img src="Results/Plots/04_Matriz_Confusion_RF.png" alt="Matriz" width="600">
+</p>
+<p align="center"><i>Figura 6: Mapa de calor de la Matriz de Confusión. La dominancia de la diagonal confirma una tasa de error residual en todas las clases.</i></p>
+
+<p align="center">
+  <img src="Results/Plots/08_Curvas_ROC.png" alt="ROC" width="600">
+</p>
+<p align="center"><i>Figura 7: Curvas ROC Multi-clase. El Área Bajo la Curva (AUC) es >0.99 para todas las clases, demostrando una sensibilidad y especificidad excepcionales.</i></p>
 
 ---
 
-## 5. Conclusion
-This study successfully developed an AI-driven pipeline for precision cancer classification. The integration of UMAP for topological visualization and Random Forest for robust classification yields a high-fidelity diagnostic tool. The identified biomarkers provide a foundation for future clinical validation and therapeutic targeting.
+## 4. Descubrimiento de Biomarcadores Moleculares
+
+### 4.1 Importancia de Características (Mean Decrease Gini)
+El modelo identificó genes específicos que actúan como los principales motores de la clasificación tumoral.
+
+<p align="center">
+  <img src="Results/Plots/05_Importancia_Biomarcadores.png" alt="Importancia" width="700">
+</p>
+<p align="center"><i>Figura 8: Top 20 genes por importancia. Estos genes representan hubs oncogénicos críticos o reguladores metabólicos clave.</i></p>
+
+### 4.2 Validación y Distribución de Genes Individuales
+Se analizó el perfil de expresión de los biomarcadores mejor posicionados para validar su poder discriminatorio.
+
+<p align="center">
+  <img src="Results/Plots/06_Perfil_Biomarcador.png" alt="Boxplot" width="600">
+</p>
+<p align="center"><i>Figura 9: Perfil de expresión del biomarcador principal. La varianza significativa entre clases confirma su utilidad diagnóstica.</i></p>
+
+<p align="center">
+  <img src="Results/Plots/10_TopGenes_Violin.png" alt="Violin" width="750">
+</p>
+<p align="center"><i>Figura 10: Densidad de expresión para los 4 mejores genes. Los diagramas de violín revelan la distribución de probabilidad subyacente.</i></p>
+
+### 4.3 Firmas Genómicas y Redes de Co-expresión
+El agrupamiento jerárquico y el análisis de correlación revelaron módulos génicos co-regulados.
+
+<p align="center">
+  <img src="Results/Plots/07_Heatmap_Clusterizado.png" alt="Heatmap" width="800">
+</p>
+<p align="center"><i>Figura 11: Heatmap Jerárquico del Top 50 de genes. Los bloques de color representan "huellas genómicas" únicas para cada tumor.</i></p>
+
+<p align="center">
+  <img src="Results/Plots/12_Red_Coexpresion_Top10.png" alt="Network" width="600">
+</p>
+<p align="center"><i>Figura 12: Matriz de correlación de los 10 mejores genes. Esta red sugiere interacciones funcionales entre biomarcadores predictivos.</i></p>
 
 ---
 
-## 6. Repository Structure
-- **`Scripts/`**: Source R code (optimized for 10-fold CV and UMAP).
-- **`Results/Plots/`**: 12 High-resolution scientific figures.
-- **`Results/Metrics.csv`**: Detailed statistical performance metrics.
-- **`Data/`**: Raw RNA-seq expression matrices.
+## 5. Conclusiones
+Este estudio ha desarrollado con éxito un pipeline basado en IA para la clasificación precisa del cáncer. La integración de UMAP para la visualización topológica y Random Forest para la clasificación robusta resulta en una herramienta diagnóstica de alta fidelidad. Los biomarcadores identificados proporcionan una base sólida para futuras validaciones clínicas y terapias dirigidas.
+
+---
+
+## 6. Referencias Bibliográficas
+*   **Breiman, L. (2001).** Random Forests. *Machine Learning*, 45(1), 5-32.
+*   **Kuhn, M., & Johnson, K. (2013).** *Applied Predictive Modeling*. Springer.
+*   **McInnes, L., Healy, J., & Melville, J. (2018).** UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction. *arXiv preprint arXiv:1802.03426*.
+*   **van der Maaten, L., & Hinton, G. (2008).** Visualizing Data using t-SNE. *Journal of Machine Learning Research*, 9, 2579-2605.
+*   **Love, M. I., Huber, W., & Anders, S. (2014).** Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15(12), 550.
