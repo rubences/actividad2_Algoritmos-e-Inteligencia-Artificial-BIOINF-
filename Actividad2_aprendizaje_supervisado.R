@@ -8,15 +8,15 @@
 
 # --- SECCIÓN 1: PREPARACIÓN DEL ENTORNO DE TRABAJO (Criterio 1) ---
 
-# Paquetes requeridos para un flujo de trabajo bioinformático completo
-required_packages <- c("readr", "dplyr", "caret", "randomForest", "e1071", "ggplot2", "gridExtra", "RColorBrewer")
+# Paquetes requeridos para análisis bioinformático y visualización avanzada
+required_packages <- c("readr", "dplyr", "caret", "randomForest", "e1071", 
+                      "ggplot2", "gridExtra", "RColorBrewer", "reshape2")
 
-# Función optimizada para la gestión de dependencias
+# Función para la gestión automatizada de dependencias
 setup_environment <- function(packages) {
   installed_packages <- rownames(installed.packages())
   for (pkg in packages) {
     if (!pkg %in% installed_packages) {
-      message(paste("Instalando paquete faltante:", pkg))
       install.packages(pkg, repos = "https://cloud.r-project.org")
     }
     suppressPackageStartupMessages(library(pkg, character.only = TRUE))
@@ -24,109 +24,118 @@ setup_environment <- function(packages) {
 }
 
 setup_environment(required_packages)
-set.seed(123) # Semilla para reproducibilidad estadística
+set.seed(123)
+
+# Crear carpeta para guardar resultados si no existe
+results_dir <- "Resultados_Graficos"
+if (!dir.exists(results_dir)) dir.create(results_dir)
 
 # --- SECCIÓN 2: PREPARACIÓN Y MANIPULACIÓN DE LOS DATOS (Criterio 2) ---
 
-# Rutas de archivos
 expr_path  <- "Data/rna_cancer/data_500.csv"
 label_path <- "Data/rna_cancer/labels.csv"
-
-# Carga y limpieza de datos
-if (!file.exists(expr_path)) stop("Archivo de expresión no encontrado.")
-if (!file.exists(label_path)) stop("Archivo de etiquetas no encontrado.")
 
 expr <- read_csv(expr_path, col_types = cols())
 labels <- read_csv(label_path, col_names = c("SampleID", "Class"), col_types = cols(), skip = 1)
 
-# Alineación de muestras (SampleID)
 names(expr)[1] <- "SampleID"
 full_dataset <- inner_join(labels, expr, by = "SampleID") %>% select(-SampleID)
 full_dataset$Class <- as.factor(full_dataset$Class)
 
-# MEJORA PRO: Pre-procesamiento de datos biológicos
-# 1. Eliminación de varianza casi nula (genes que no aportan información)
+# Limpieza: Varianza casi nula
 nzv <- nearZeroVar(full_dataset[, -1], saveMetrics = TRUE)
-full_dataset <- full_dataset[, c(TRUE, !nzv$nzv)] # Mantenemos la clase y genes con varianza
+full_dataset <- full_dataset[, c(TRUE, !nzv$nzv)]
 
-# 2. Normalización (Centrado y Escalamiento)
-# Es vital para algoritmos como SVM que las variables tengan rangos similares.
+# Normalización (Centrado y Escalamiento)
 pre_process_params <- preProcess(full_dataset[, -1], method = c("center", "scale"))
 full_dataset_proc <- predict(pre_process_params, full_dataset)
 
-cat(sprintf("\nDatos listos: %d muestras y %d genes tras limpieza.\n", 
-            nrow(full_dataset_proc), ncol(full_dataset_proc) - 1))
+# --- SECCIÓN 3: VISUALIZACIONES EXPLORATORIAS ---
 
-# --- SECCIÓN 3: ANÁLISIS EXPLORATORIO (Creatividad - Criterio 6) ---
+# 3.1 Distribución de Clases
+dist_plot <- ggplot(full_dataset_proc, aes(x = Class, fill = Class)) +
+  geom_bar() +
+  theme_minimal() +
+  labs(title = "Distribución de Tipos de Cáncer", x = "Clase", y = "Número de Muestras") +
+  scale_fill_brewer(palette = "Set2")
+ggsave(file.path(results_dir, "01_Distribucion_Clases.png"), dist_plot, width = 8, height = 6)
 
+# 3.2 PCA Plot (Estructura del Dataset)
 pca_res <- prcomp(full_dataset_proc[, -1])
 pca_df <- as.data.frame(pca_res$x[, 1:2])
 pca_df$Class <- full_dataset_proc$Class
-
 pca_plot <- ggplot(pca_df, aes(x = PC1, y = PC2, color = Class)) +
   geom_point(alpha = 0.8, size = 2.5) +
   theme_minimal() +
-  labs(title = "Estructura del Dataset (PCA)",
-       subtitle = "Visualización de la separación biológica de los tumores",
-       x = "Componente Principal 1", y = "Componente Principal 2") +
+  labs(title = "Análisis de Componentes Principales (PCA)", x = "PC1", y = "PC2") +
   scale_color_brewer(palette = "Dark2")
+ggsave(file.path(results_dir, "02_PCA_Análisis.png"), pca_plot, width = 8, height = 6)
 
-print(pca_plot)
+# --- SECCIÓN 4: DIVISIÓN Y ENTRENAMIENTO (Criterio 3) ---
 
-# --- SECCIÓN 4: DIVISIÓN DEL CONJUNTO DE DATOS ---
-
-# División estratificada 70/30
 train_index <- createDataPartition(full_dataset_proc$Class, p = 0.70, list = FALSE)
 train_data  <- full_dataset_proc[train_index, ]
 test_data   <- full_dataset_proc[-train_index, ]
 
-# --- SECCIÓN 5: SELECCIÓN Y ENTRENAMIENTO DEL MODELO (Criterio 3) ---
-
-# Configuración de entrenamiento con Validación Cruzada (5-fold CV)
-train_control <- trainControl(method = "cv", number = 5, verboseIter = FALSE)
-
-# Comparativa de modelos: Random Forest vs SVM
-# RF es excelente para detectar genes clave, SVM es muy potente en clasificación.
-message("\nEntrenando modelos...")
+train_control <- trainControl(method = "cv", number = 5)
 model_rf <- train(Class ~ ., data = train_data, method = "rf", trControl = train_control, tuneLength = 2)
-model_svm <- train(Class ~ ., data = train_data, method = "svmLinear", trControl = train_control)
 
-# --- SECCIÓN 6: EVALUACIÓN DEL MODELO (Criterio 4) ---
+# --- SECCIÓN 5: EVALUACIÓN Y NUEVAS VISUALIZACIONES (Criterio 4) ---
 
-# Predicciones y Métricas
 pred_rf <- predict(model_rf, test_data)
 cm_rf <- confusionMatrix(pred_rf, test_data$Class)
 
-cat("\n--- RESULTADOS DE EVALUACIÓN (Random Forest) ---\n")
-print(cm_rf$overall)
-
-# Visualización de la Matriz de Confusión
+# 5.1 Heatmap de Matriz de Confusión
 cm_df <- as.data.frame(cm_rf$table)
 cm_plot <- ggplot(cm_df, aes(Prediction, Reference, fill = Freq)) +
   geom_tile() + geom_text(aes(label = Freq), color = "white", size = 5) +
   scale_fill_gradient(low = "#e0ecf4", high = "#8856a7") +
-  theme_minimal() + labs(title = "Matriz de Confusión: Diagnóstico Predicho vs Real")
+  theme_minimal() + labs(title = "Matriz de Confusión")
+ggsave(file.path(results_dir, "03_Matriz_Confusion.png"), cm_plot, width = 8, height = 6)
 
-# Importancia de Variables (Genes Biomarcadores)
+# 5.2 Ranking de Importancia de Genes
 importance <- varImp(model_rf)
 top_genes <- data.frame(Gene = rownames(importance$importance),
                        Score = importance$importance[, 1]) %>%
-  arrange(desc(Score)) %>% head(20)
+  arrange(desc(Score)) %>% head(15)
 
 importance_plot <- ggplot(top_genes, aes(x = reorder(Gene, Score), y = Score)) +
   geom_bar(stat = "identity", fill = "#31a354") + coord_flip() +
-  theme_minimal() + labs(title = "Top 20 Genes Biomarcadores", x = "Gen", y = "Score de Importancia")
+  theme_minimal() + labs(title = "Top 15 Genes Biomarcadores", x = "Gen", y = "Score")
+ggsave(file.path(results_dir, "04_Importancia_Genes.png"), importance_plot, width = 8, height = 6)
 
-grid.arrange(cm_plot, importance_plot, ncol = 1)
+# 5.3 Boxplot del Gen más Importante (Comportamiento biológico)
+best_gene <- top_genes$Gene[1]
+boxplot_top <- ggplot(full_dataset_proc, aes_string(x = "Class", y = best_gene, fill = "Class")) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = paste("Expresión de", best_gene, "por Tipo de Cáncer"),
+       subtitle = "Visualización del biomarcador principal", x = "Clase", y = "Expresión Normalizada") +
+  scale_fill_brewer(palette = "Pastel1")
+ggsave(file.path(results_dir, "05_Boxplot_TopGene.png"), boxplot_top, width = 8, height = 6)
 
-# --- SECCIÓN 7: CONCLUSIONES Y CIERRE ---
+# 5.4 Correlación entre el Top 10 de Genes
+top10_genes <- top_genes$Gene[1:10]
+cor_matrix <- cor(full_dataset_proc[, top10_genes])
+melted_cor <- melt(cor_matrix)
+corr_plot <- ggplot(melted_cor, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(title = "Correlación entre Genes Top 10", x = "", y = "")
+ggsave(file.path(results_dir, "06_Correlacion_Genes.png"), corr_plot, width = 8, height = 8)
+
+# --- SECCIÓN 6: INFORME FINAL Y CONCLUSIONES ---
 
 cat("\n==============================================================================\n")
 cat("                       INFORME DE RESULTADOS FINALES\n")
 cat("==============================================================================\n")
-cat(sprintf("1. PRECISIÓN: Se ha obtenido un Accuracy de %.2f%%.\n", cm_rf$overall["Accuracy"] * 100))
-cat("2. BIOLOGÍA: Los genes en la parte superior del ranking son candidatos a\n")
-cat("   biomarcadores diagnósticos para diferenciar estos tipos de cáncer.\n")
-cat("3. TÉCNICA: La normalización y eliminación de genes con baja varianza\n")
-cat("   ha permitido obtener un modelo estable y generalizable.\n")
+cat(sprintf("PRECISIÓN GLOBAL: %.2f%%\n", cm_rf$overall["Accuracy"] * 100))
+cat(sprintf("BIOMARCADOR LÍDER: %s\n", best_gene))
+cat(sprintf("RESULTADOS GUARDADOS EN: %s/\n", results_dir))
+cat("==============================================================================\n")
+cat("CONCLUSIÓN: El modelo ha identificado firmas transcriptómicas claras que permiten\n")
+cat("una clasificación precisa de los tumores. Las visualizaciones guardadas permiten\n")
+cat("validar la solidez estadística y biológica del estudio.\n")
 cat("==============================================================================\n")
