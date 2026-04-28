@@ -33,49 +33,35 @@ Se evaluó el rendimiento comparativo entre **Random Forest (RF)** y **Máquinas
 ### 3.1 Análisis Exploratorio y Distribución de Clases
 El análisis inicial de la distribución confirmó un dataset equilibrado, factor esencial para prevenir sesgos algorítmicos hacia tipos específicos de tumor.
 
-<p align="center">
-  <img src="Results/Plots/01_Distribucion_Clases.png" alt="Distribución" width="600">
-</p>
-<p align="center"><i>Figura 1: Distribución de muestras por tipo de cáncer. El balance garantiza un entrenamiento equitativo entre categorías.</i></p>
+![Distribución](./Results/Plots/01_Distribucion_Clases.png)
+*Figura 1: Distribución de muestras por tipo de cáncer. El balance garantiza un entrenamiento equitativo entre categorías.*
 
 ### 3.2 Reducción de Dimensionalidad e Integridad de Clusters
 Para evaluar la señal biológica, se realizaron proyecciones lineales (PCA) y no lineales (t-SNE, UMAP).
 
-<p align="center">
-  <img src="Results/Plots/02_PCA_Estructura.png" alt="PCA" width="600">
-</p>
-<p align="center"><i>Figura 2: Análisis de Componentes Principales (PCA). El PCA captura la varianza global, mostrando separaciones preliminares en un espacio euclídeo lineal.</i></p>
+![PCA](./Results/Plots/02_PCA_Estructura.png)
+*Figura 2: Análisis de Componentes Principales (PCA). El PCA captura la varianza global, mostrando separaciones preliminares en un espacio euclídeo lineal.*
 
-<p align="center">
-  <img src="Results/Plots/09_tSNE_Clusters.png" alt="t-SNE" width="700">
-</p>
-<p align="center"><i>Figura 3: Proyección t-SNE. t-SNE revela variedades no lineales (manifolds) bien definidas, indicando identidades transcriptómicas potentes (van der Maaten & Hinton, 2008).</i></p>
+![t-SNE](./Results/Plots/09_tSNE_Clusters.png)
+*Figura 3: Proyección t-SNE. t-SNE revela variedades no lineales (manifolds) bien definidas, indicando identidades transcriptómicas potentes (van der Maaten & Hinton, 2008).*
 
-<p align="center">
-  <img src="Results/Plots/11_UMAP_Expert_Projection.png" alt="UMAP" width="700">
-</p>
-<p align="center"><i>Figura 4: Incrustación UMAP. UMAP ofrece una preservación superior de la topología global, mostrando clusters tumorales extremadamente compactos e independientes (McInnes et al., 2018).</i></p>
+![UMAP](./Results/Plots/11_UMAP_Expert_Projection.png)
+*Figura 4: Incrustación UMAP. UMAP ofrece una preservación superior de la topología global, mostrando clusters tumorales extremadamente compactos e independientes (McInnes et al., 2018).*
 
 ### 3.3 Rendimiento del Modelo y Evaluación Comparativa
 Random Forest demostró una superioridad estadística sobre SVM en términos de estabilidad y el índice Kappa de Cohen.
 
-<p align="center">
-  <img src="Results/Plots/03_Comparativa_Modelos.png" alt="Comparativa" width="600">
-</p>
-<p align="center"><i>Figura 5: Distribución de precisión mediante 10-fold CV. RF superó consistentemente a SVM en el espacio genómico de alta dimensionalidad.</i></p>
+![Comparativa](./Results/Plots/03_Comparativa_Modelos.png)
+*Figura 5: Distribución de precisión mediante 10-fold CV. RF superó consistentemente a SVM en el espacio genómico de alta dimensionalidad.*
 
 ### 3.4 Fiabilidad Diagnóstica y Validación
 La fiabilidad del modelo fue validada mediante matrices de confusión y curvas ROC multi-clase.
 
-<p align="center">
-  <img src="Results/Plots/04_Matriz_Confusion_RF.png" alt="Matriz" width="600">
-</p>
-<p align="center"><i>Figura 6: Mapa de calor de la Matriz de Confusión. La dominancia de la diagonal confirma una tasa de error residual en todas las clases.</i></p>
+![Matriz](./Results/Plots/04_Matriz_Confusion_RF.png)
+*Figura 6: Mapa de calor de la Matriz de Confusión. La dominancia de la diagonal confirma una tasa de error residual en todas las clases.*
 
-<p align="center">
-  <img src="Results/Plots/08_Curvas_ROC.png" alt="ROC" width="600">
-</p>
-<p align="center"><i>Figura 7: Curvas ROC Multi-clase. El Área Bajo la Curva (AUC) es >0.99 para todas las clases, demostrando una sensibilidad y especificidad excepcionales.</i></p>
+![ROC](./Results/Plots/08_Curvas_ROC.png)
+*Figura 7: Curvas ROC Multi-clase. El Área Bajo la Curva (AUC) es >0.99 para todas las clases, demostrando una sensibilidad y especificidad excepcionales.*
 
 ---
 
@@ -84,36 +70,26 @@ La fiabilidad del modelo fue validada mediante matrices de confusión y curvas R
 ### 4.1 Importancia de Características (Mean Decrease Gini)
 El modelo identificó genes específicos que actúan como los principales motores de la clasificación tumoral.
 
-<p align="center">
-  <img src="Results/Plots/05_Importancia_Biomarcadores.png" alt="Importancia" width="700">
-</p>
-<p align="center"><i>Figura 8: Top 20 genes por importancia. Estos genes representan hubs oncogénicos críticos o reguladores metabólicos clave.</i></p>
+![Importancia](./Results/Plots/05_Importancia_Biomarcadores.png)
+*Figura 8: Top 20 genes por importancia. Estos genes representan hubs oncogénicos críticos o reguladores metabólicos clave.*
 
 ### 4.2 Validación y Distribución de Genes Individuales
 Se analizó el perfil de expresión de los biomarcadores mejor posicionados para validar su poder discriminatorio.
 
-<p align="center">
-  <img src="Results/Plots/06_Perfil_Biomarcador.png" alt="Boxplot" width="600">
-</p>
-<p align="center"><i>Figura 9: Perfil de expresión del biomarcador principal. La varianza significativa entre clases confirma su utilidad diagnóstica.</i></p>
+![Boxplot](./Results/Plots/06_Perfil_Biomarcador.png)
+*Figura 9: Perfil de expresión del biomarcador principal. La varianza significativa entre clases confirma su utilidad diagnóstica.*
 
-<p align="center">
-  <img src="Results/Plots/10_TopGenes_Violin.png" alt="Violin" width="750">
-</p>
-<p align="center"><i>Figura 10: Densidad de expresión para los 4 mejores genes. Los diagramas de violín revelan la distribución de probabilidad subyacente.</i></p>
+![Violin](./Results/Plots/10_TopGenes_Violin.png)
+*Figura 10: Densidad de expresión para los 4 mejores genes. Los diagramas de violín revelan la distribución de probabilidad subyacente.*
 
 ### 4.3 Firmas Genómicas y Redes de Co-expresión
 El agrupamiento jerárquico y el análisis de correlación revelaron módulos génicos co-regulados.
 
-<p align="center">
-  <img src="Results/Plots/07_Heatmap_Clusterizado.png" alt="Heatmap" width="800">
-</p>
-<p align="center"><i>Figura 11: Heatmap Jerárquico del Top 50 de genes. Los bloques de color representan "huellas genómicas" únicas para cada tumor.</i></p>
+![Heatmap](./Results/Plots/07_Heatmap_Clusterizado.png)
+*Figura 11: Heatmap Jerárquico del Top 50 de genes. Los bloques de color representan "huellas genómicas" únicas para cada tumor.*
 
-<p align="center">
-  <img src="Results/Plots/12_Red_Coexpresion_Top10.png" alt="Network" width="600">
-</p>
-<p align="center"><i>Figura 12: Matriz de correlación de los 10 mejores genes. Esta red sugiere interacciones funcionales entre biomarcadores predictivos.</i></p>
+![Network](./Results/Plots/12_Red_Coexpresion_Top10.png)
+*Figura 12: Matriz de correlación de los 10 mejores genes. Esta red sugiere interacciones funcionales entre biomarcadores predictivos.*
 
 ---
 
