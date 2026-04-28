@@ -1,0 +1,3 @@
+# Ignorar archivos de datos demasiado grandes para GitHub
+Data/rna_cancer/data.csv
+Data/rna_cancer/data.csv.zip
